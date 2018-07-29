@@ -11,17 +11,22 @@
  * - PB_6 - I2C SCL of the LSM303DLHC
  * - PE_4 - INT1 pin of the LSM303DLHC
  */
-#include "lsm303dhlc_driver.h"
+#include "lsm303dlhc_driver.h"
 #include "mbed.h"
 
 DigitalOut led(LED2);
 
 int main()
 {
-    // specify I2C pins directly
-    LSM303DLHCAccelerometer accelerometer(PB_7, PB_6);
+    // accelerometer initialization
+    I2C acc_i2c(PB_7, PB_6);
+    acc_i2c.frequency(400000);
+    LSM303DLHCAccelerometer accelerometer(&acc_i2c);
     // perform basic configuration of the accelerometer (set default frequency, enable axes, etc.)
-    accelerometer.init();
+    int err_code = accelerometer.init();
+    if (err_code) {
+        MBED_ERROR(MBED_MAKE_ERROR(MBED_MODULE_APPLICATION, err_code), "accelerometer initialization error");
+    }
 
     accelerometer.set_output_data_rate(LSM303DLHCAccelerometer::ODR_100HZ);
     accelerometer.set_high_pass_filter_mode(LSM303DLHCAccelerometer::HPF_CF1);
@@ -36,12 +41,9 @@ int main()
     while (true) {
         // read accelerometer data in the m/s^2
         accelerometer.read_data(acc_data);
-        printf("----------------\n");
-        printf("x: %+.4f m/s^2\n", acc_data[0]);
-        printf("y: %+.4f m/s^2\n", acc_data[1]);
-        printf("z: %+.4f m/s^2\n", acc_data[2]);
+        printf("x: %+.4f m/s^2; y: %+.4f m/s^2; z: %+.4f m/s^2\n", acc_data[0], acc_data[1], acc_data[2]);
 
         led = !led;
-        wait(2.0);
+        wait(0.1);
     }
 }

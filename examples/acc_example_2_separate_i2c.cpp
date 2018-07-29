@@ -11,20 +11,22 @@
  * - PB_6 - I2C SCL of the LSM303DLHC
  * - PE_4 - INT1 pin of the LSM303DLHC
  */
-#include "lsm303dhlc_driver.h"
+#include "lsm303dlhc_driver.h"
 #include "mbed.h"
 
 DigitalOut led(LED2);
 
 int main()
 {
-    // Create I2C interface separately. It allows to use it with different drivers.
+    // create I2C interface separately. It allows to use it with different drivers.
     I2C acc_i2c(PB_7, PB_6);
     acc_i2c.frequency(400000); // LSM303DLHC can use I2C fast mode
-
     LSM303DLHCAccelerometer accelerometer(&acc_i2c);
     // perform basic configuration of the accelerometer (set default frequency, enable axes, etc.)
-    accelerometer.init();
+    int err_code = accelerometer.init();
+    if (err_code) {
+        MBED_ERROR(MBED_MAKE_ERROR(MBED_MODULE_APPLICATION, err_code), "accelerometer initialization error");
+    }
 
     float acc_data[3];
 

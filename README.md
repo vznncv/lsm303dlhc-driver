@@ -1,32 +1,34 @@
-# LSM303DLHC accelerometer interface library
+# LSM303DLHC interface library
 
-The library contains an accelerometer driver of the LSM303DLHC chip for mbed-os.
+The library contains an accelerometer and a magnetometer driver of the
+[LSM303DLHC](https://www.st.com/en/mems-and-sensors/lsm303dlhc.html) chip for mbed-os.
+
 Library allows:
 
 - change output data range
-- enable data ready interrupt
+- enable data ready interrupt (accelerometer only)
 - set scale mode
-- configure high pass filter
+- configure high pass filter (accelerometer only)
+- read temperature value
 
-## Accelerometer usage
+## Driver usage
 
 Typical interface usage contains the following steps:
 
 1. create `I2C` interface. This allows to use it with other drivers;
-2. create `LSM303DLHCAccelerometer` driver instance;
-3. invoke `LSM303DLHCAccelerometer::init` method. This method will perform 
-   basic device configuration, and set some default setting;
-4. configure LSM303DLHC for you purposes;
-5. read data using `LSM303DLHCAccelerometer::read_data` or
-   `LSM303DLHCAccelerometer::read_data_16` methods.
+2. create `LSM303DLHCAccelerometer`/`LSM303DLHCMagnetometer` driver instances;
+3. invoke `init` method. This method will perform basic device configuration, and set some default setting;
+4. invoke driver method to configure LSM303DLHC for you purposes;
+5. read data using `read_data` or `read_data_16` methods.
 
-The simple program that uses accelerometer with STM32F3Discovery board is shown bellow:
+The simple program that uses accelerometer with [STM32F3Discovery](https://www.st.com/en/evaluation-tools/stm32f3discovery.html)
+board is shown bellow:
 
 ```
 /**
- * Base example of the LSM303DLHC usage with STM32F3Discovery board.
+ * Example of the LSM303DLHC usage with STM32F3Discovery board.
  *
- * Base accelerometer usage.
+ * Base example of the LSM303DLHC usage.
  *
  * Pin map:
  *
@@ -35,34 +37,50 @@ The simple program that uses accelerometer with STM32F3Discovery board is shown 
  * - PB_7 - I2C SDA of the LSM303DLHC
  * - PB_6 - I2C SCL of the LSM303DLHC
  * - PE_4 - INT1 pin of the LSM303DLHC
+ * - PE_2 - DRDY pin of the LSM303DLHC
  */
-#include "lsm303dhlc_driver.h"
+#include "lsm303dlhc_driver.h"
+#include "math.h"
 #include "mbed.h"
 
 DigitalOut led(LED2);
 
 int main()
 {
-    // Create I2C interface separately. It allows to use it with different drivers.
-    I2C acc_i2c(PB_7, PB_6);
-    acc_i2c.frequency(400000); // LSM303DLHC can use I2C fast mode
-
-    LSM303DLHCAccelerometer accelerometer(&acc_i2c);
-    // perform basic configuration of the accelerometer (set default frequency, enable axes, etc.)
+    // create I2C interface separately. It allows to use it with different drivers.
+    I2C lsm303dlhc_i2c(PB_7, PB_6);
+    lsm303dlhc_i2c.frequency(400000); // LSM303DLHC can use I2C fast mode
+    // instantiate magnetometer and accelerometer
+    LSM303DLHCMagnetometer magnetometer(&lsm303dlhc_i2c);
+    magnetometer.init();
+    LSM303DLHCAccelerometer accelerometer(&lsm303dlhc_i2c);
     accelerometer.init();
 
+    // sensor data
     float acc_data[3];
+    float x_a, y_a, z_a, abs_a;
+    float mag_data[3];
+    float x_m, y_m, z_m, abs_m;
 
     while (true) {
-        // read accelerometer data in the m/s^2
+        // read sensor data
         accelerometer.read_data(acc_data);
-        printf("----------------\n");
-        printf("x: %+.4f m/s^2\n", acc_data[0]);
-        printf("y: %+.4f m/s^2\n", acc_data[1]);
-        printf("z: %+.4f m/s^2\n", acc_data[2]);
+        x_a = acc_data[0];
+        y_a = acc_data[1];
+        z_a = acc_data[2];
+        abs_a = sqrtf(x_a * x_a + y_a * y_a + z_a * z_a);
+        magnetometer.read_data(mag_data);
+        x_m = mag_data[0];
+        y_m = mag_data[1];
+        z_m = mag_data[2];
+        abs_m = sqrtf(x_m * x_m + y_m * y_m + z_m * z_m);
+
+        // print data to serial port
+        printf("accelerometer: x = %+.4f m/s^2; y = %+.4f m/s^2; z = %+.4f m/s^2; abs = %+.4f m/s^2\n", x_a, y_a, z_a, abs_a);
+        printf("magnetometer:  x = %+.4f gauss; y = %+.4f gauss; z = %+.4f gauss; abs = %+.4f gauss\n", x_m, y_m, z_m, abs_m);
 
         led = !led;
-        wait(2.0);
+        wait(1.0);
     }
 }
 ```

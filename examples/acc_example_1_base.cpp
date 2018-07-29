@@ -11,7 +11,7 @@
  * - PB_6 - I2C SCL of the LSM303DLHC
  * - PE_4 - INT1 pin of the LSM303DLHC
  */
-#include "lsm303dhlc_driver.h"
+#include "lsm303dlhc_driver.h"
 #include "mbed.h"
 
 DigitalOut led(LED2);
@@ -21,7 +21,10 @@ int main()
     // specify I2C pins directly
     LSM303DLHCAccelerometer accelerometer(PB_7, PB_6);
     // perform basic configuration of the accelerometer (set default frequency, enable axes, etc.)
-    accelerometer.init();
+    int err_code = accelerometer.init();
+    if (err_code) {
+        MBED_ERROR(MBED_MAKE_ERROR(MBED_MODULE_APPLICATION, err_code), "accelerometer initialization error");
+    }
 
     float acc_data[3];
 

@@ -1,49 +1,38 @@
-#ifndef LSM303DHLC_DRIVER_BASE_H
-#define LSM303DHLC_DRIVER_BASE_H
+#ifndef LSM303DLHC_ACCELEROMETER_DRIVER_H
+#define LSM303DLHC_ACCELEROMETER_DRIVER_H
 
+#include "lsm303dlhc_utils.h"
 #include "mbed.h"
 
+namespace lsm303dlhc {
+
 /**
- * The base class for LSM303DLHC accelerometer.
- *
- * It implements main accelerometer logic.
+ * The LSM303DLHC accelerometer driver.
  */
-class LSM303DLHCAccelerometerBase : NonCopyable<LSM303DLHCAccelerometerBase> {
+class LSM303DLHCAccelerometer : NonCopyable<LSM303DLHCAccelerometer> {
 public:
-    LSM303DLHCAccelerometerBase();
-
-    // the methods that should be implemented in the subclass for device register manipulation.
-    virtual uint8_t read_register(uint8_t reg) = 0;
-    virtual void write_register(uint8_t reg, uint8_t val) = 0;
-    virtual void read_registers(uint8_t reg, uint8_t* data, uint8_t length) = 0;
-
-    // helper methods to set/reset separate bit of the device register
     /**
-     * Update specified register.
+     * Constructor
      *
-     * Only bits that are selected by mask will be updated.
-     *
-     * @param reg register address
-     * @param val value to set
-     * @param mask value mask
+     * @param i2c_ptr I2C interface
      */
-    virtual void update_register(uint8_t reg, uint8_t val, uint8_t mask);
+    LSM303DLHCAccelerometer(I2C* i2c_ptr);
 
     /**
-     * Version of the read_register method with mask.
+     * Constructor.
      *
-     * Any bit in the result that corresponds zero bits in the mask will be set to 0.
-     *
-     * @param reg register address
-     * @param mask mask
-     * @return masked register value
+     * @param sda I2C data line pin
+     * @param scl I2C clock line pin
+     * @param frequency I2C bus frequency
      */
-    virtual uint8_t read_register(uint8_t reg, uint8_t mask);
+    LSM303DLHCAccelerometer(PinName sda, PinName scl, int frequency = 400000);
+
+    virtual ~LSM303DLHCAccelerometer();
 
     /**
      * Initialize device with default settings and test connection.
      *
-     * @return 0, if device is initialize correctly, otherwise 1.
+     * @return 0, if device is initialize correctly, otherwise non-zero error code.
      */
     int init();
 
@@ -51,42 +40,58 @@ public:
      * Accelerometer register addresses
      */
     enum Registers {
-        WHO_AM_I_ADDR = 0x0F, /* Device identification register */
-        CTRL_REG1_A = 0x20, /* Control register 1 acceleration */
-        CTRL_REG2_A = 0x21, /* Control register 2 acceleration */
-        CTRL_REG3_A = 0x22, /* Control register 3 acceleration */
-        CTRL_REG4_A = 0x23, /* Control register 4 acceleration */
-        CTRL_REG5_A = 0x24, /* Control register 5 acceleration */
-        CTRL_REG6_A = 0x25, /* Control register 6 acceleration */
-        REFERENCE_A = 0x26, /* Reference register acceleration */
-        STATUS_REG_A = 0x27, /* Status register acceleration */
-        OUT_X_L_A = 0x28, /* Output Register X acceleration */
-        OUT_X_H_A = 0x29, /* Output Register X acceleration */
-        OUT_Y_L_A = 0x2A, /* Output Register Y acceleration */
-        OUT_Y_H_A = 0x2B, /* Output Register Y acceleration */
-        OUT_Z_L_A = 0x2C, /* Output Register Z acceleration */
-        OUT_Z_H_A = 0x2D, /* Output Register Z acceleration */
-        FIFO_CTRL_REG_A = 0x2E, /* FIFO control Register acceleration */
-        FIFO_SRC_REG_A = 0x2F, /* FIFO src Register acceleration */
+        WHO_AM_I_ADDR = 0x0F, // Device identification register
+        CTRL_REG1_A = 0x20, // Control register 1 acceleration
+        CTRL_REG2_A = 0x21, // Control register 2 acceleration
+        CTRL_REG3_A = 0x22, // Control register 3 acceleration
+        CTRL_REG4_A = 0x23, // Control register 4 acceleration
+        CTRL_REG5_A = 0x24, // Control register 5 acceleration
+        CTRL_REG6_A = 0x25, // Control register 6 acceleration
+        REFERENCE_A = 0x26, // Reference register acceleration
+        STATUS_REG_A = 0x27, // Status register acceleration
+        OUT_X_L_A = 0x28, // Output Register X acceleration
+        OUT_X_H_A = 0x29, // Output Register X acceleration
+        OUT_Y_L_A = 0x2A, // Output Register Y acceleration
+        OUT_Y_H_A = 0x2B, // Output Register Y acceleration
+        OUT_Z_L_A = 0x2C, // Output Register Z acceleration
+        OUT_Z_H_A = 0x2D, // Output Register Z acceleration
+        FIFO_CTRL_REG_A = 0x2E, // FIFO control Register acceleration
+        FIFO_SRC_REG_A = 0x2F, // FIFO src Register acceleration
 
-        INT1_CFG_A = 0x30, /* Interrupt 1 configuration Register acceleration */
-        INT1_SOURCE_A = 0x31, /* Interrupt 1 source Register acceleration */
-        INT1_THS_A = 0x32, /* Interrupt 1 Threshold register acceleration */
-        INT1_DURATION_A = 0x33, /* Interrupt 1 DURATION register acceleration */
+        INT1_CFG_A = 0x30, // Interrupt 1 configuration Register acceleration
+        INT1_SOURCE_A = 0x31, // Interrupt 1 source Register acceleration
+        INT1_THS_A = 0x32, // Interrupt 1 Threshold register acceleration
+        INT1_DURATION_A = 0x33, // Interrupt 1 DURATION register acceleration
 
-        INT2_CFG_A = 0x34, /* Interrupt 2 configuration Register acceleration */
-        INT2_SOURCE_A = 0x35, /* Interrupt 2 source Register acceleration */
-        INT2_THS_A = 0x36, /* Interrupt 2 Threshold register acceleration */
-        INT2_DURATION_A = 0x37, /* Interrupt 2 DURATION register acceleration */
+        INT2_CFG_A = 0x34, // Interrupt 2 configuration Register acceleration
+        INT2_SOURCE_A = 0x35, // Interrupt 2 source Register acceleration
+        INT2_THS_A = 0x36, // Interrupt 2 Threshold register acceleration
+        INT2_DURATION_A = 0x37, // Interrupt 2 DURATION register acceleration
 
-        CLICK_CFG_A = 0x38, /* Click configuration Register acceleration */
-        CLICK_SOURCE_A = 0x39, /* Click 2 source Register acceleration */
-        CLICK_THS_A = 0x3A, /* Click 2 Threshold register acceleration */
+        CLICK_CFG_A = 0x38, // Click configuration Register acceleration
+        CLICK_SOURCE_A = 0x39, // Click 2 source Register acceleration
+        CLICK_THS_A = 0x3A, // Click 2 Threshold register acceleration
 
-        TIME_LIMIT_A = 0x3B, /* Time Limit Register acceleration */
-        TIME_LATENCY_A = 0x3C, /* Time Latency Register acceleration */
-        TIME_WINDOW_A = 0x3D, /* Time window register acceleration */
+        TIME_LIMIT_A = 0x3B, // Time Limit Register acceleration
+        TIME_LATENCY_A = 0x3C, // Time Latency Register acceleration
+        TIME_WINDOW_A = 0x3D, // Time window register acceleration
     };
+
+    /**
+     * Read accelerometer register.
+     *
+     * @param reg register address
+     * @return register value
+     */
+    uint8_t read_register(uint8_t reg);
+
+    /**
+     * Write value to accelerometer register.
+     *
+     * @param reg register address
+     * @param val register value
+     */
+    void write_register(uint8_t reg, uint8_t val);
 
     enum PowerMode {
         NORMAL_POWER_MODE = 0,
@@ -174,11 +179,11 @@ public:
     static const float GRAVITY_OF_EARTH = 9.80665f;
 
     /**
-     * Get value of the (m/s^2)/LSB.
+     * Get sensor sensitivity in (m/s^2)/LSB.
      *
      * @return
      */
-    float get_unit_per_lsb();
+    float get_sensitivity();
 
     enum HighPassFilterMode {
         HPF_OFF = 0xFF, /* Switch off filter */
@@ -265,10 +270,13 @@ public:
     /**
      * Read current accelerometer data.
      *
-     * The data will be stored in the array with order: x_a, y_a, z_a.
+     * The data will be placed into \p data array in order: x, y, z.
      * The values is converted into m/s^2 units.
      *
      * @note the data can have offset
+     *
+     * @todo
+     * Add possibility to add user offset for a calibration.
      *
      * @param data
      */
@@ -277,23 +285,24 @@ public:
     /**
      * Read raw accelerometer data.
      *
-     * The data will be stored in the array with order: x_a, y_a, z_a.
+     * The data will be placed into \p data array in order: x, y, z.
      * The values represent signed integers. To get m/s^2 units, the values should be multiply
-     * by the value that is returned by method LSM303DLHCAccelerometerBase::get_unit_per_lsb.
+     * by the value that is returned by method LSM303DLHCAccelerometer::get_sensitivity.
      *
      * @param data
      */
     void read_data_16(int16_t data[3]);
 
-protected:
-    virtual ~LSM303DLHCAccelerometerBase();
-
 private:
+    I2CDevice i2c_device;
+
+    static const uint8_t I2C_ADDRESS = 0x32;
+
     // TODO: check different mems to be sure that value of the "WHO_AM_I_ADDR" register is stable.
     static const int DEVICE_ID = 0x33;
 
     // current unit/lsb
-    float unit_per_lsb;
+    float sensitivity;
 };
-
-#endif // LSM303DHLC_DRIVER_BASE_H
+}
+#endif // LSM303DLHC_ACCELEROMETER_DRIVER_H

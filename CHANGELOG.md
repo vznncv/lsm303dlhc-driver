@@ -7,5 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 
-- Basic API to configure accelerometer and read data
-- Possibility to enable data ready interrupt for an accelerometer
+- Added basic API for an accelerometer
+- Added basic API for a magnetometer
+- Added examples of the accelerometer/magnetometer usage
