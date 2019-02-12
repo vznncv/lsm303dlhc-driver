@@ -20,7 +20,7 @@ public:
      *
      * @param i2c_ptr I2C interface
      */
-    LSM303DLHCMagnetometer(I2C* i2c_ptr);
+    LSM303DLHCMagnetometer(I2C *i2c_ptr);
 
     /**
      * Constructor.
@@ -134,13 +134,13 @@ public:
 
     enum OutputDataRate {
         ODR_0_75_HZ = 0x00,
-        ODR_1_5_HZ = 0x20,
-        ODR_3_0_HZ = 0x40,
-        ODR_7_5_HZ = 0x60,
-        ODR_15_HZ = 0x80,
-        ODR_30_HZ = 0xA0,
-        ODR_75_HZ = 0xC0,
-        ODR_220_HZ = 0xE0,
+        ODR_1_5_HZ = 0x01,
+        ODR_3_0_HZ = 0x02,
+        ODR_7_5_HZ = 0x03,
+        ODR_15_HZ = 0x04,
+        ODR_30_HZ = 0x05,
+        ODR_75_HZ = 0x06,
+        ODR_220_HZ = 0x07,
     };
 
     /**

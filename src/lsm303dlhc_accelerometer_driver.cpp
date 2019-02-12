@@ -4,7 +4,7 @@
 
 using namespace lsm303dlhc;
 
-LSM303DLHCAccelerometer::LSM303DLHCAccelerometer(I2C* i2c_ptr)
+LSM303DLHCAccelerometer::LSM303DLHCAccelerometer(I2C *i2c_ptr)
     : i2c_device(I2C_ADDRESS, i2c_ptr)
     , sensitivity(0)
 {

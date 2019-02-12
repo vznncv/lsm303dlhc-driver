@@ -1,3 +1,21 @@
 {
-  "name": "lsm303dlhc-driver"
+    "name": "lsm303dlhc-driver",
+    "config": {
+        "test_i2c_sda": {
+            "help": "I2C SDA pin of the LSM303DLHC. It should be used for library tests only",
+            "value": "PB_7"
+        },
+        "test_i2c_scl": {
+            "help": "I2C SCL pin of the LSM303DLHC. It should be used for library tests only",
+            "value": "PB_6"
+        },
+        "test_int_1": {
+            "help": "INT1 pin of the LSM303DLHC. It should be used for library tests only",
+            "value": "PE_4"
+        },
+        "test_int_2": {
+            "help": "INT2 pin of the LSM303DLHC. It should be used for library tests only",
+            "value": "PE_5"
+        }
+    }
 }
