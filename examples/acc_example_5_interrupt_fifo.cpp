@@ -1,7 +1,7 @@
 /**
  * Example of the LSM303DLHC usage with STM32F3Discovery board.
  *
- * Example of the interrupt usage.
+ * Example of the interrupt and FIFO usage.
  *
  * Pin map:
  *
@@ -18,15 +18,18 @@ struct accel_interrupt_processor_t {
     int count;
     LSM303DLHCAccelerometer *accel_ptr;
     DigitalOut *led_ptr;
+    int block_size;
 
     void read_and_print()
     {
         led_ptr->write(1);
 
         float axes_data[3];
-        accel_ptr->read_data(axes_data);
-        printf("%4d. x = %+6.2f m/s^2; y = %+6.2f m/s^2; z = %+6.2f m/s^2\n", count, axes_data[0], axes_data[1], axes_data[2]);
-        count++;
+        for (int i = 0; i < block_size; i++) {
+            accel_ptr->read_data(axes_data);
+            printf("%4d. x = %+6.2f m/s^2; y = %+6.2f m/s^2; z = %+6.2f m/s^2\n", count, axes_data[0], axes_data[1], axes_data[2]);
+            count++;
+        }
 
         led_ptr->write(0);
     }
@@ -47,9 +50,12 @@ int main()
     InterruptIn int2(PE_4);
     DigitalOut led(LED2);
     EventQueue queue;
-    accel_interrupt_processor_t accel_interrupt_processor = { .count = 0, .accel_ptr = &accelerometer, .led_ptr = &led };
+    int block_size = 10;
+    accel_interrupt_processor_t accel_interrupt_processor = { .count = 0, .accel_ptr = &accelerometer, .led_ptr = &led, .block_size = block_size };
     int2.rise(queue.event(&accel_interrupt_processor, &accel_interrupt_processor_t::read_and_print));
     accelerometer.set_output_data_rate(LSM303DLHCAccelerometer::ODR_10HZ);
+    accelerometer.set_fifo_mode(LSM303DLHCAccelerometer::FIFO_ENABLE);
+    accelerometer.set_fifo_watermark(block_size);
     accelerometer.set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
     queue.dispatch_forever();
 }

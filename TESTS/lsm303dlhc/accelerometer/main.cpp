@@ -181,13 +181,39 @@ void test_fifo_interrupt_usage()
     TEST_ASSERT_FLOAT_WITHIN(1.0f, 9.8f, a_abs);
 }
 
+/**
+ * High pass filter test.
+ */
+void test_high_pass_filter()
+{
+    float a_vec[3];
+    float a_sum;
+    float a;
+    const int num_samples = 25;
+
+    acc->set_output_data_rate(LSM303DLHCAccelerometer::ODR_25HZ);
+    acc->set_high_pass_filter_mode(LSM303DLHCAccelerometer::HPF_CF1);
+    // skip transient state
+    wait_ms(500);
+
+    for (int i = 0; i < num_samples; i++) {
+        wait_ms(40);
+        acc->read_data(a_vec);
+        a_sum += abs_acc_val(a_vec);
+    }
+    a = a_sum / num_samples;
+
+    TEST_ASSERT_FLOAT_WITHIN(0.5f, 0.0f, a);
+}
+
 // test cases description
 #define AccCase(test_fun) Case(#test_fun, case_setup_handler, test_fun, greentea_case_teardown_handler, greentea_case_failure_continue_handler)
 Case cases[] = {
     AccCase(test_init_state),
     AccCase(test_full_scale),
     AccCase(test_simple_iterrupt_usage),
-    AccCase(test_fifo_interrupt_usage)
+    AccCase(test_fifo_interrupt_usage),
+    AccCase(test_high_pass_filter)
 };
 Specification specification(test_setup_handler, cases, test_teardown_handler);
 
