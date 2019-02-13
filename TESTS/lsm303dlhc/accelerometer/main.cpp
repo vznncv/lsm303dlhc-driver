@@ -43,6 +43,8 @@ void test_init_state()
 
     // check parameter
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::NORMAL_POWER_MODE, acc->get_power_mode());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::FIFO_DISABLE, acc->get_fifo_mode());
+    TEST_ASSERT_EQUAL(0, acc->get_fifo_watermark());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::ODR_25HZ, acc->get_output_data_rate());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HRO_ENABLED, acc->get_high_resolution_output_mode());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HPF_OFF, acc->get_high_pass_filter_mode());
@@ -95,19 +97,26 @@ void test_full_scale()
     }
 }
 
-struct simple_interrupt_counter_t {
-    int count;
+struct interrupt_counter_t {
+    int samples_count;
+    int invokation_count;
     float a_abs_sum;
+
+    const int samples_per_invokation;
 
     void process_interrupt()
     {
-        count++;
+        invokation_count++;
         float a_vec[3];
         float a_abs;
 
-        acc->read_data(a_vec);
-        a_abs = abs_acc_val(a_vec);
-        a_abs_sum += a_abs;
+        for (int i = 0; i < samples_per_invokation; i++) {
+            samples_count++;
+
+            acc->read_data(a_vec);
+            a_abs = abs_acc_val(a_vec);
+            a_abs_sum += a_abs;
+        }
     }
 };
 
@@ -117,13 +126,14 @@ struct simple_interrupt_counter_t {
 void test_simple_iterrupt_usage()
 {
     InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_INT_1);
-    simple_interrupt_counter_t interrupt_counter = { .count = 0, .a_abs_sum = 0 };
-    Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &simple_interrupt_counter_t::process_interrupt));
+    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .a_abs_sum = 0, .samples_per_invokation = 1 };
+    Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
     drdy_pin.rise(interrupt_cb);
 
     // prepare accelerometer and run interrupts
     acc->set_output_data_rate(LSM303DLHCAccelerometer::ODR_25HZ);
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
+    // wait processing
     wait_ms(500);
     // disable interrupts
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_DISABLE);
@@ -131,8 +141,43 @@ void test_simple_iterrupt_usage()
     wait_ms(100);
 
     // check results
-    TEST_ASSERT(interrupt_counter.count > 10);
-    float a_abs = interrupt_counter.a_abs_sum / interrupt_counter.count;
+    TEST_ASSERT(interrupt_counter.samples_count > 10);
+    TEST_ASSERT(interrupt_counter.samples_count < 20);
+    float a_abs = interrupt_counter.a_abs_sum / interrupt_counter.samples_count;
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 9.8f, a_abs);
+}
+
+/**
+ * Test FIFO and interrupt usage.
+ */
+void test_fifo_interrupt_usage()
+{
+    const int block_size = 16;
+
+    InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_INT_1);
+    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .a_abs_sum = 0, .samples_per_invokation = block_size };
+    Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
+    drdy_pin.rise(interrupt_cb);
+
+    // prepare accelerometer and run interrupts
+    acc->clear_fifo();
+    acc->set_output_data_rate(LSM303DLHCAccelerometer::ODR_25HZ);
+    acc->set_fifo_watermark(block_size);
+    acc->set_fifo_mode(LSM303DLHCAccelerometer::FIFO_ENABLE);
+    acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
+
+    // wait processing
+    wait_ms(2500);
+
+    acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_DISABLE);
+    drdy_pin.disable_irq();
+    wait_ms(100);
+
+    // check results
+    TEST_ASSERT_EQUAL(block_size * 3, interrupt_counter.samples_count);
+    TEST_ASSERT_EQUAL(3, interrupt_counter.invokation_count);
+
+    float a_abs = interrupt_counter.a_abs_sum / interrupt_counter.samples_count;
     TEST_ASSERT_FLOAT_WITHIN(1.0f, 9.8f, a_abs);
 }
 
@@ -141,7 +186,8 @@ void test_simple_iterrupt_usage()
 Case cases[] = {
     AccCase(test_init_state),
     AccCase(test_full_scale),
-    AccCase(test_simple_iterrupt_usage)
+    AccCase(test_simple_iterrupt_usage),
+    AccCase(test_fifo_interrupt_usage)
 };
 Specification specification(test_setup_handler, cases, test_teardown_handler);
 

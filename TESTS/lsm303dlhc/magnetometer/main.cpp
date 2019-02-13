@@ -89,12 +89,64 @@ void test_magnetometer()
     }
 }
 
+struct interrupt_counter_t {
+    int samples_count;
+    int invokation_count;
+    float m_abs_sum;
+
+    const int samples_per_invokation;
+
+    void process_interrupt()
+    {
+        invokation_count++;
+        float m_vec[3];
+        float m_abs;
+
+        for (int i = 0; i < samples_per_invokation; i++) {
+            samples_count++;
+
+            mag->read_data(m_vec);
+            m_abs = abs_mag_val(m_vec);
+            m_abs_sum += m_abs;
+        }
+    }
+};
+
+/**
+ * Test magnetometer interrupt usage.
+ */
+void test_magnetometer_interrupt()
+{
+    InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_DRDY);
+    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .m_abs_sum = 0, .samples_per_invokation = 1 };
+    Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
+
+    // prepare accelerometer and run interrupts
+    mag->set_output_data_rate(LSM303DLHCMagnetometer::ODR_30_HZ);
+    drdy_pin.rise(interrupt_cb);
+
+    // wait processing
+    wait_ms(500);
+
+    // disable interrupts
+    drdy_pin.disable_irq();
+    wait_ms(500);
+
+    // check results
+    TEST_ASSERT(interrupt_counter.samples_count > 10);
+    TEST_ASSERT(interrupt_counter.samples_count < 20);
+    float m_abs = interrupt_counter.m_abs_sum / interrupt_counter.samples_count;
+
+    TEST_ASSERT(m_abs > 0.01);
+}
+
 // test cases description
 #define MagCase(test_fun) Case(#test_fun, case_setup_handler, test_fun, greentea_case_teardown_handler, greentea_case_failure_continue_handler)
 Case cases[] = {
     MagCase(test_init_state),
     MagCase(test_temp_sensor),
-    MagCase(test_magnetometer)
+    MagCase(test_magnetometer),
+    MagCase(test_magnetometer_interrupt)
 };
 Specification specification(test_setup_handler, cases, test_teardown_handler);
 

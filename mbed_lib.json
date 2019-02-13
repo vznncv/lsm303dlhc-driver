@@ -16,6 +16,10 @@
         "test_int_2": {
             "help": "INT2 pin of the LSM303DLHC. It should be used for library tests only",
             "value": "PE_5"
+        },
+        "test_drdy": {
+            "help": "DYDY pin of the LSM303DLHC (magnetometer). It should be used for library tests only",
+            "value": "PE_2"
         }
     }
 }

@@ -30,6 +30,8 @@ int LSM303DLHCAccelerometer::init()
 
     // set default modes
     set_data_ready_interrupt_mode(DRDY_DISABLE);
+    set_fifo_mode(FIFO_DISABLE);
+    set_fifo_watermark(0);
     set_full_scale(FULL_SCALE_2G);
     set_high_pass_filter_mode(HPF_OFF);
     set_high_resolution_output_mode(HRO_ENABLED);
@@ -268,18 +270,61 @@ float LSM303DLHCAccelerometer::get_high_pass_filter_cut_off_frequency()
     return f_cutt_off;
 }
 
+void LSM303DLHCAccelerometer::set_fifo_mode(LSM303DLHCAccelerometer::FIFOMode mode)
+{
+    if (mode) {
+        i2c_device.update_register(FIFO_CTRL_REG_A, 0x80, 0xC0); // configure FIFO stream mode
+        i2c_device.update_register(CTRL_REG5_A, 0x40, 0x40); // enable FIFO
+    } else {
+        i2c_device.update_register(CTRL_REG5_A, 0x00, 0x40); // disabled FIFO
+        i2c_device.update_register(FIFO_CTRL_REG_A, 0x00, 0xC0); // configure FIFO bypass mode
+    }
+    // update drdy interrupt
+    _process_interrupt_register(2);
+}
+
+LSM303DLHCAccelerometer::FIFOMode LSM303DLHCAccelerometer::get_fifo_mode()
+{
+    uint8_t fifo_mode = i2c_device.read_register(CTRL_REG5_A, 0x40);
+    if (fifo_mode) {
+        return FIFO_ENABLE;
+    } else {
+        return FIFO_DISABLE;
+    }
+}
+
+void LSM303DLHCAccelerometer::set_fifo_watermark(int watermark)
+{
+    if (watermark < 0 || watermark >= 32) {
+        MBED_ERROR(MBED_ERROR_INVALID_ARGUMENT, "Invalid watermark value");
+    }
+    i2c_device.update_register(FIFO_CTRL_REG_A, watermark, 0x1F);
+}
+
+int LSM303DLHCAccelerometer::get_fifo_watermark()
+{
+    return i2c_device.read_register(FIFO_CTRL_REG_A, 0x1F);
+}
+
+void LSM303DLHCAccelerometer::clear_fifo()
+{
+    uint8_t fifo_mode = i2c_device.read_register(FIFO_CTRL_REG_A, 0xC0);
+    if (fifo_mode != 0) {
+        // switch to bypass mode and back
+        // (this action will clear FIFO)
+        i2c_device.update_register(FIFO_CTRL_REG_A, 0x00, 0xC0);
+        i2c_device.update_register(FIFO_CTRL_REG_A, fifo_mode, 0xC0);
+    }
+}
+
 void LSM303DLHCAccelerometer::set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DatadaReadyInterruptMode drdy_mode)
 {
-    // Note: enable I1_DRDY1 interrupt
-    // there is I2_DRDY2 interrupt bit, that can be set,
-    // but I don't find what it means
-    i2c_device.update_register(CTRL_REG3_A, drdy_mode == DRDY_ENABLE ? 0x10 : 0x00, 0x18);
+    _process_interrupt_register(drdy_mode == DRDY_ENABLE ? 1 : 0);
 }
 
 LSM303DLHCAccelerometer::DatadaReadyInterruptMode LSM303DLHCAccelerometer::get_data_ready_interrupt_mode()
 {
-    uint8_t val = i2c_device.read_register(CTRL_REG3_A, 0x18);
-    return val ? DRDY_ENABLE : DRDY_DISABLE;
+    return _process_interrupt_register(3);
 }
 
 void LSM303DLHCAccelerometer::set_high_resolution_output_mode(HighResolutionOutputMode hro)
@@ -313,4 +358,55 @@ void LSM303DLHCAccelerometer::read_data_16(int16_t data[3])
     data[0] = (int16_t)(raw_data[1] << 8 | raw_data[0]) >> 4; // X axis
     data[1] = (int16_t)(raw_data[3] << 8 | raw_data[2]) >> 4; // Y axis
     data[2] = (int16_t)(raw_data[5] << 8 | raw_data[4]) >> 4; // Z axis
+}
+
+LSM303DLHCAccelerometer::DatadaReadyInterruptMode LSM303DLHCAccelerometer::_process_interrupt_register(int mode)
+{
+    DatadaReadyInterruptMode res;
+    FIFOMode fifo_mode;
+
+    // CTRL_REG3_A bits:
+    // 0b000000x0 - I1_OVERRUN - FIFO overrun
+    // 0b00000x00 - I1_WTM - FIFO watermark
+    // 0b0000x000 - I1_DRDY2 - purpose is unknown
+    // 0b000x0000 - I1_DRDY1 - new data is generated
+
+    switch (mode) {
+    case 0:
+        // disable interrupts
+        i2c_device.update_register(CTRL_REG3_A, 0x00, 0x1E);
+        res = DRDY_DISABLE;
+        break;
+    case 1:
+        // enable interrupt
+        fifo_mode = get_fifo_mode();
+        if (fifo_mode) {
+            // watermark interrupt
+            i2c_device.update_register(CTRL_REG3_A, 0x04, 0x1E);
+        } else {
+            // DRDY interrupt
+            i2c_device.update_register(CTRL_REG3_A, 0x10, 0x1E);
+        }
+        res = DRDY_ENABLE;
+        break;
+    case 2:
+        // update interrupt mode
+        // note: it can be used if we switch off/of FIFO
+        if (_process_interrupt_register(3) == DRDY_ENABLE) {
+            res = _process_interrupt_register(1);
+        } else {
+            res = _process_interrupt_register(0);
+        }
+        break;
+    case 3:
+        // check current interrupt state
+        if (i2c_device.read_register(CTRL_REG3_A, 0x1E)) {
+            res = DRDY_ENABLE;
+        } else {
+            res = DRDY_DISABLE;
+        }
+        break;
+    }
+
+    return res;
 }
