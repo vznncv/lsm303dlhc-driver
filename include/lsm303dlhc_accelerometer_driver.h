@@ -16,7 +16,7 @@ public:
      *
      * @param i2c_ptr I2C interface
      */
-    LSM303DLHCAccelerometer(I2C* i2c_ptr);
+    LSM303DLHCAccelerometer(I2C *i2c_ptr);
 
     /**
      * Constructor.
@@ -223,7 +223,43 @@ public:
      */
     float get_high_pass_filter_cut_off_frequency();
 
-    // TODO: add methods for FIFO control
+    enum FIFOMode {
+        FIFO_ENABLE = 1,
+        FIFO_DISABLE = 0
+    };
+
+    /**
+     * Enable/disabled FIFO.
+     *
+     * @param mode
+     */
+    void set_fifo_mode(FIFOMode mode);
+
+    /**
+     * Check if FIFO is enabled/disabled.
+     *
+     * @return 0 if FIFO is disabled, otherwise non-zero value
+     */
+    FIFOMode get_fifo_mode();
+
+    /**
+     * Set FIFO watermark.
+     *
+     * @param watermark value between 0 an 31.
+     */
+    void set_fifo_watermark(int watermark);
+
+    /**
+     * Get current FIFO watermark value.
+     *
+     * @return watermark value
+     */
+    int get_fifo_watermark();
+
+    /**
+     * Clear FIFO content.
+     */
+    void clear_fifo();
 
     enum DatadaReadyInterruptMode {
         DRDY_ENABLE = 1,
@@ -232,6 +268,8 @@ public:
 
     /**
      * Enable/disable accelerometer data ready interrupt on pin INT1.
+     *
+     * If FIFO is enabled, interrupt will be configured for FIFO watermark.
      *
      * @param drdy_mode
      */
@@ -303,6 +341,20 @@ private:
 
     // current unit/lsb
     float sensitivity;
+
+    /**
+     * Update interrupt register.
+     *
+     * \p mode values:
+     * - 0 - disable
+     * - 1 - enable
+     * - 2 - update configuration
+     * - 3 - check status
+     *
+     * @param mode
+     * @return return interrupt state
+     */
+    DatadaReadyInterruptMode _process_interrupt_register(int mode);
 };
 }
 #endif // LSM303DLHC_ACCELEROMETER_DRIVER_H

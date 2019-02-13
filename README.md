@@ -87,4 +87,11 @@ int main()
 
 Other examples can be found in the folder `examples`.
 
+## Run tests
 
+The project contains some tests. To run them you should:
+
+1. create a new project, with this library;
+2. adjust `lsm303dlhc-driver.test_*` pins in the `mbed_json.app` for I2C and interrupts if you don't use a STM32F3Discovery board; 
+3. connect board;
+4. run `mbed test --greentea --test-by-name "lsm303dlhc-driver-tests-*"`.

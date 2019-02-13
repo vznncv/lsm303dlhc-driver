@@ -2,7 +2,7 @@
 
 using namespace lsm303dlhc;
 
-LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(I2C* i2c_ptr)
+LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(I2C *i2c_ptr)
     : i2c_device(I2C_ADDRESS, i2c_ptr)
     , xy_mag_sensitivity(0)
     , z_mag_sensitivity(0)
@@ -86,37 +86,37 @@ float LSM303DLHCMagnetometer::get_temperature_sensor_zero_offset()
 
 void LSM303DLHCMagnetometer::set_output_data_rate(OutputDataRate odr)
 {
-    i2c_device.update_register(CRB_REG_M, odr, 0xE0);
+    i2c_device.update_register(CRA_REG_M, (uint8_t)(odr << 2), 0x3C);
 }
 
 LSM303DLHCMagnetometer::OutputDataRate LSM303DLHCMagnetometer::get_output_data_rate()
 {
-    uint8_t val = i2c_device.read_register(CRB_REG_M, 0xE0);
+    uint8_t val = i2c_device.read_register(CRA_REG_M, 0x3C) >> 2;
     OutputDataRate odr;
 
     switch (val) {
     case 0x00:
         odr = ODR_0_75_HZ;
         break;
-    case 0x20:
+    case 0x01:
         odr = ODR_1_5_HZ;
         break;
-    case 0x40:
+    case 0x02:
         odr = ODR_3_0_HZ;
         break;
-    case 0x60:
+    case 0x03:
         odr = ODR_7_5_HZ;
         break;
-    case 0x80:
+    case 0x04:
         odr = ODR_15_HZ;
         break;
-    case 0xA0:
+    case 0x05:
         odr = ODR_30_HZ;
         break;
-    case 0xC0:
+    case 0x06:
         odr = ODR_75_HZ;
         break;
-    case 0xE0:
+    case 0x07:
         odr = ODR_220_HZ;
         break;
     default:
