@@ -253,8 +253,8 @@ private:
     // TODO: check different mems to be sure that value of the "WHO_AM_I_ADDR" register is stable.
     static const int DEVICE_ID = 0x3C;
 
-    static const float temperature_sensitivity = 1.0f / 16.0f;
-    static const float temperature_offset = 21.0f;
+    static const float temperature_sensitivity;
+    static const float temperature_offset;
 
     // IRx_REG_M register values
     static const uint8_t IRA_REG_M_VAL = 0x48;

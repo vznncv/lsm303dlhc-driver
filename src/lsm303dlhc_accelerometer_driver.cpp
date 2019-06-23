@@ -222,6 +222,8 @@ LSM303DLHCAccelerometer::FullScale LSM303DLHCAccelerometer::get_full_scale()
     return fs;
 }
 
+const float LSM303DLHCAccelerometer::GRAVITY_OF_EARTH = 9.80665f;
+
 float LSM303DLHCAccelerometer::get_sensitivity()
 {
     return sensitivity;

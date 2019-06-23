@@ -267,3 +267,7 @@ void LSM303DLHCMagnetometer::read_data_16(int16_t data[])
     data[1] = (int16_t)((raw_data[4] << 8) + raw_data[5]);
     data[2] = (int16_t)((raw_data[2] << 8) + raw_data[3]);
 }
+
+const float LSM303DLHCMagnetometer::temperature_sensitivity = 1.0f / 16.0f;
+const float LSM303DLHCMagnetometer::temperature_offset = 21.0f;
+

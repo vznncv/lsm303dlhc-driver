@@ -176,7 +176,7 @@ public:
      */
     FullScale get_full_scale();
 
-    static const float GRAVITY_OF_EARTH = 9.80665f;
+    static const float GRAVITY_OF_EARTH;
 
     /**
      * Get sensor sensitivity in (m/s^2)/LSB.
