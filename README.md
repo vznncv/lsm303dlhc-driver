@@ -11,6 +11,8 @@ Library allows:
 - configure high pass filter (accelerometer only)
 - read temperature value
 
+The library is tested and and compatible with Mbed OS 5.13.
+
 ## Driver usage
 
 Typical interface usage contains the following steps:

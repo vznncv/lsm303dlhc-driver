@@ -59,7 +59,7 @@ float abs_acc_val(float a_data[3])
 
 int16_t abs_acc_val(int16_t a_data[3])
 {
-    return sqrtf(a_data[0] * a_data[0] + a_data[1] * a_data[1] + a_data[2] * a_data[2]);
+    return (int16_t)sqrtf(a_data[0] * a_data[0] + a_data[1] * a_data[1] + a_data[2] * a_data[2]);
 }
 
 /**
@@ -77,7 +77,7 @@ void test_full_scale()
         LSM303DLHCAccelerometer::FULL_SCALE_8G, LSM303DLHCAccelerometer::FULL_SCALE_16G
     };
     int16_t expected_a_abs_ints[] = { 1024, 512, 256, 128 };
-    int16_t expected_a_delta_ints[] = { 128, 64, 32, 48 };
+    int16_t expected_a_delta_ints[] = { 128, 64, 32, 56 };
 
     // check full scale modes
     for (int i = 0; i < 4; i++) {
@@ -104,6 +104,14 @@ struct interrupt_counter_t {
 
     const int samples_per_invokation;
 
+    interrupt_counter_t(int samples_per_invokation = 1)
+        : samples_count(0)
+        , invokation_count(0)
+        , a_abs_sum(0)
+        , samples_per_invokation(samples_per_invokation)
+    {
+    }
+
     void process_interrupt()
     {
         invokation_count++;
@@ -126,25 +134,27 @@ struct interrupt_counter_t {
 void test_simple_iterrupt_usage()
 {
     InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_INT_1);
-    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .a_abs_sum = 0, .samples_per_invokation = 1 };
+    interrupt_counter_t interrupt_counter;
     Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
+    drdy_pin.disable_irq();
     drdy_pin.rise(interrupt_cb);
 
     // prepare accelerometer and run interrupts
     acc->set_output_data_rate(LSM303DLHCAccelerometer::ODR_25HZ);
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
+    drdy_pin.enable_irq();
     // wait processing
-    wait_ms(500);
+    wait_ms(1000);
     // disable interrupts
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_DISABLE);
     drdy_pin.disable_irq();
     wait_ms(100);
 
     // check results
-    TEST_ASSERT(interrupt_counter.samples_count > 10);
-    TEST_ASSERT(interrupt_counter.samples_count < 20);
+    TEST_ASSERT_INT_WITHIN(5, 25, interrupt_counter.samples_count);
     float a_abs = interrupt_counter.a_abs_sum / interrupt_counter.samples_count;
     TEST_ASSERT_FLOAT_WITHIN(1.0f, 9.8f, a_abs);
+    TEST_ASSERT_INT_WITHIN(10, 98, (int)(a_abs * 10));
 }
 
 /**
@@ -155,8 +165,9 @@ void test_fifo_interrupt_usage()
     const int block_size = 16;
 
     InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_INT_1);
-    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .a_abs_sum = 0, .samples_per_invokation = block_size };
+    interrupt_counter_t interrupt_counter(block_size);
     Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
+    drdy_pin.disable_irq();
     drdy_pin.rise(interrupt_cb);
 
     // prepare accelerometer and run interrupts
@@ -165,6 +176,7 @@ void test_fifo_interrupt_usage()
     acc->set_fifo_watermark(block_size);
     acc->set_fifo_mode(LSM303DLHCAccelerometer::FIFO_ENABLE);
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
+    drdy_pin.enable_irq();
 
     // wait processing
     wait_ms(2500);
