@@ -20,7 +20,7 @@ LSM303DLHCMagnetometer::~LSM303DLHCMagnetometer()
 {
 }
 
-int LSM303DLHCMagnetometer::init()
+int LSM303DLHCMagnetometer::init(bool start)
 {
     // check IRx_REG_M register
     if (i2c_device.read_register(IRA_REG_M) != IRA_REG_M_VAL) {
@@ -35,7 +35,7 @@ int LSM303DLHCMagnetometer::init()
     set_temperature_sensor_mode(TS_ENABLE);
     set_output_data_rate(ODR_15_HZ);
     set_full_scale(FULL_SCALE_1_3_G);
-    set_magnetometer_mode(M_ENABLE);
+    set_magnetometer_mode(start ? M_ENABLE : M_DISABLE);
 
     return MBED_SUCCESS;
 }
@@ -270,4 +270,3 @@ void LSM303DLHCMagnetometer::read_data_16(int16_t data[])
 
 const float LSM303DLHCMagnetometer::temperature_sensitivity = 1.0f / 16.0f;
 const float LSM303DLHCMagnetometer::temperature_offset = 21.0f;
-

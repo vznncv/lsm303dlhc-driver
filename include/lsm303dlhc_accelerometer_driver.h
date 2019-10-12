@@ -32,9 +32,12 @@ public:
     /**
      * Initialize device with default settings and test connection.
      *
+     * Note: this method is idempotent.
+     *
+     * @param start if it's `true`, then initially sensor will be enabled, otherwise disabled.
      * @return 0, if device is initialize correctly, otherwise non-zero error code.
      */
-    int init();
+    int init(bool start = true);
 
     /**
      * Accelerometer register addresses
@@ -332,15 +335,32 @@ public:
     void read_data_16(int16_t data[3]);
 
 private:
-    I2CDevice i2c_device;
+    I2CDevice _i2c_device;
 
-    static const uint8_t I2C_ADDRESS = 0x32;
+    static const uint8_t _I2C_ADDRESS = 0x32;
 
     // TODO: check different mems to be sure that value of the "WHO_AM_I_ADDR" register is stable.
-    static const int DEVICE_ID = 0x33;
+    static const int _DEVICE_ID = 0x33;
 
     // current unit/lsb
-    float sensitivity;
+    float _sensitivity;
+
+    /**
+     * Reboot memory content.
+     */
+    void _reboot_memory_content();
+
+    /**
+     * Dummy record read.
+     *
+     * It can be used to reset data ready interrupt.
+     */
+    void _dummy_read();
+
+    /**
+     * Clear current data to reset interrupt request.
+     */
+    void _clear_data();
 
     /**
      * Update interrupt register.

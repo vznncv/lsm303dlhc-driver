@@ -33,7 +33,7 @@ utest::v1::status_t case_setup_handler(const Case *const source, const size_t in
 /**
  * Test accelerometer state after initialization.
  */
-void test_init_state()
+void test_init_state_enabled()
 {
     int err;
 
@@ -46,6 +46,28 @@ void test_init_state()
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::FIFO_DISABLE, acc->get_fifo_mode());
     TEST_ASSERT_EQUAL(0, acc->get_fifo_watermark());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::ODR_25HZ, acc->get_output_data_rate());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HRO_ENABLED, acc->get_high_resolution_output_mode());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HPF_OFF, acc->get_high_pass_filter_mode());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::FULL_SCALE_2G, acc->get_full_scale());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::DRDY_DISABLE, acc->get_data_ready_interrupt_mode());
+}
+
+/**
+ * Test accelerometer state after initialization.
+ */
+void test_init_state_disabled()
+{
+    int err;
+
+    // check that init isn't failed
+    err = acc->init(false);
+    TEST_ASSERT_EQUAL(0, err);
+
+    // check parameter
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::NORMAL_POWER_MODE, acc->get_power_mode());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::FIFO_DISABLE, acc->get_fifo_mode());
+    TEST_ASSERT_EQUAL(0, acc->get_fifo_watermark());
+    TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::ODR_NONE, acc->get_output_data_rate());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HRO_ENABLED, acc->get_high_resolution_output_mode());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::HPF_OFF, acc->get_high_pass_filter_mode());
     TEST_ASSERT_EQUAL(LSM303DLHCAccelerometer::FULL_SCALE_2G, acc->get_full_scale());
@@ -221,7 +243,8 @@ void test_high_pass_filter()
 // test cases description
 #define AccCase(test_fun) Case(#test_fun, case_setup_handler, test_fun, greentea_case_teardown_handler, greentea_case_failure_continue_handler)
 Case cases[] = {
-    AccCase(test_init_state),
+    AccCase(test_init_state_enabled),
+    AccCase(test_init_state_disabled),
     AccCase(test_full_scale),
     AccCase(test_simple_iterrupt_usage),
     AccCase(test_fifo_interrupt_usage),
