@@ -36,9 +36,12 @@ public:
     /**
      * Initialize device with default settings and test connection.
      *
+     * Note: this method is idempotent.
+     *
+     * @param start if it's `true`, then initially sensor will be enabled, otherwise disabled.
      * @return 0, if device is initialize correctly, otherwise non-zero error code.
      */
-    int init();
+    int init(bool start = true);
 
     /**
      * Magnetometer register addresses
@@ -177,9 +180,9 @@ public:
     void set_magnetometer_mode(MagnetometerMode mm);
 
     /**
-     * Check if magnetometer enabled/disabled.
+     * Check if magnetometer is enabled/disabled.
      *
-     * @return 0 if magnetometer is enabled, non-zero if it's disabled
+     * @return @c M_ENABLE if magnetometer is enabled, else @c M_DISABLE
      */
     MagnetometerMode get_magnetometer_mode();
 

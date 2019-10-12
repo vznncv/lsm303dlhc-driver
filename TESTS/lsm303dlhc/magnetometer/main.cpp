@@ -33,7 +33,7 @@ utest::v1::status_t case_setup_handler(const Case *const source, const size_t in
 /**
  * Test magnetometer state after initialization.
  */
-void test_init_state()
+void test_init_state_enabled()
 {
     int err;
 
@@ -43,6 +43,24 @@ void test_init_state()
 
     // check parameter
     TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::M_ENABLE, mag->get_magnetometer_mode());
+    TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::ODR_15_HZ, mag->get_output_data_rate());
+    TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::FULL_SCALE_1_3_G, mag->get_full_scale());
+    TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::TS_ENABLE, mag->get_temperature_sensor_mode());
+}
+
+/**
+ * Test magnetometer state after initialization.
+ */
+void test_init_state_disabled()
+{
+    int err;
+
+    // check that init isn't failed
+    err = mag->init(false);
+    TEST_ASSERT_EQUAL(0, err);
+
+    // check parameter
+    TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::M_DISABLE, mag->get_magnetometer_mode());
     TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::ODR_15_HZ, mag->get_output_data_rate());
     TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::FULL_SCALE_1_3_G, mag->get_full_scale());
     TEST_ASSERT_EQUAL(LSM303DLHCMagnetometer::TS_ENABLE, mag->get_temperature_sensor_mode());
@@ -143,7 +161,8 @@ void test_magnetometer_interrupt()
 // test cases description
 #define MagCase(test_fun) Case(#test_fun, case_setup_handler, test_fun, greentea_case_teardown_handler, greentea_case_failure_continue_handler)
 Case cases[] = {
-    MagCase(test_init_state),
+    MagCase(test_init_state_enabled),
+    MagCase(test_init_state_disabled),
     MagCase(test_temp_sensor),
     MagCase(test_magnetometer),
     MagCase(test_magnetometer_interrupt)
