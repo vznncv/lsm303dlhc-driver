@@ -3,16 +3,18 @@
 using namespace lsm303dlhc;
 
 LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(I2C *i2c_ptr)
-    : i2c_device(I2C_ADDRESS, i2c_ptr)
-    , xy_mag_sensitivity(0)
-    , z_mag_sensitivity(0)
+    : _i2c_device(_I2C_ADDRESS, i2c_ptr)
+    , _xy_mag_sensitivity(0)
+    , _z_mag_sensitivity(0)
+    , _mode_state(0)
 {
 }
 
 LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(PinName sda, PinName scl, int frequency)
-    : i2c_device(I2C_ADDRESS, sda, scl, frequency)
-    , xy_mag_sensitivity(0)
-    , z_mag_sensitivity(0)
+    : _i2c_device(_I2C_ADDRESS, sda, scl, frequency)
+    , _xy_mag_sensitivity(0)
+    , _z_mag_sensitivity(0)
+    , _mode_state(0)
 {
 }
 
@@ -23,11 +25,11 @@ LSM303DLHCMagnetometer::~LSM303DLHCMagnetometer()
 int LSM303DLHCMagnetometer::init(bool start)
 {
     // check IRx_REG_M register
-    if (i2c_device.read_register(IRA_REG_M) != IRA_REG_M_VAL) {
+    if (_i2c_device.read_register(IRA_REG_M) != _IRA_REG_M_VAL) {
         return MBED_ERROR_INITIALIZATION_FAILED;
-    } else if (i2c_device.read_register(IRB_REG_M) != IRB_REG_M_VAL) {
+    } else if (_i2c_device.read_register(IRB_REG_M) != _IRB_REG_M_VAL) {
         return MBED_ERROR_INITIALIZATION_FAILED;
-    } else if (i2c_device.read_register(IRC_REG_M) != IRC_REG_M_VAL) {
+    } else if (_i2c_device.read_register(IRC_REG_M) != _IRC_REG_M_VAL) {
         return MBED_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -42,56 +44,56 @@ int LSM303DLHCMagnetometer::init(bool start)
 
 uint8_t LSM303DLHCMagnetometer::read_register(uint8_t reg)
 {
-    return i2c_device.read_register(reg);
+    return _i2c_device.read_register(reg);
 }
 
 void LSM303DLHCMagnetometer::write_register(uint8_t reg, uint8_t val)
 {
-    i2c_device.write_register(reg, val);
+    _i2c_device.write_register(reg, val);
 }
 
 void LSM303DLHCMagnetometer::set_temperature_sensor_mode(TemperatureSensorMode tsm)
 {
-    i2c_device.update_register(CRA_REG_M, tsm, 0x80);
+    _i2c_device.update_register(CRA_REG_M, tsm, 0x80);
 }
 
 LSM303DLHCMagnetometer::TemperatureSensorMode LSM303DLHCMagnetometer::get_temperature_sensor_mode()
 {
-    uint8_t val = i2c_device.read_register(CRA_REG_M, 0x80);
+    uint8_t val = _i2c_device.read_register(CRA_REG_M, 0x80);
     return val ? TS_ENABLE : TS_DISABLE;
 }
 
 float LSM303DLHCMagnetometer::read_temperature()
 {
     int16_t t_raw = read_temperature_16();
-    return t_raw * temperature_sensitivity + temperature_offset;
+    return t_raw * _temperature_sensitivity + _temperature_offset;
 }
 
 int16_t LSM303DLHCMagnetometer::read_temperature_16()
 {
     uint8_t data[2];
-    i2c_device.read_registers(TEMP_OUT_H_M, data, 2);
+    _i2c_device.read_registers(TEMP_OUT_H_M, data, 2);
     return (int16_t)(((int16_t)data[0] << 8) + data[1]) >> 4;
 }
 
 float LSM303DLHCMagnetometer::get_temperature_sensor_sensitivity()
 {
-    return temperature_sensitivity;
+    return _temperature_sensitivity;
 }
 
 float LSM303DLHCMagnetometer::get_temperature_sensor_zero_offset()
 {
-    return temperature_offset;
+    return _temperature_offset;
 }
 
 void LSM303DLHCMagnetometer::set_output_data_rate(OutputDataRate odr)
 {
-    i2c_device.update_register(CRA_REG_M, (uint8_t)(odr << 2), 0x3C);
+    _i2c_device.update_register(CRA_REG_M, (uint8_t)(odr << 2), 0x3C);
 }
 
 LSM303DLHCMagnetometer::OutputDataRate LSM303DLHCMagnetometer::get_output_data_rate()
 {
-    uint8_t val = i2c_device.read_register(CRA_REG_M, 0x3C) >> 2;
+    uint8_t val = _i2c_device.read_register(CRA_REG_M, 0x3C) >> 2;
     OutputDataRate odr;
 
     switch (val) {
@@ -161,53 +163,59 @@ float LSM303DLHCMagnetometer::get_output_data_rate_hz()
 
 void LSM303DLHCMagnetometer::set_magnetometer_mode(MagnetometerMode mm)
 {
-    i2c_device.update_register(MR_REG_M, mm ? 0x00 : 0x03, 0x03);
+    if (mm) {
+        _i2c_device.write_register(MR_REG_M, 0x00);
+        _mode_state = 1;
+    } else {
+        _mode_state = 0;
+        _i2c_device.write_register(MR_REG_M, 0x03);
+    }
 }
 
 LSM303DLHCMagnetometer::MagnetometerMode LSM303DLHCMagnetometer::get_magnetometer_mode()
 {
-    uint8_t val = i2c_device.read_register(MR_REG_M, 0x03);
+    uint8_t val = _i2c_device.read_register(MR_REG_M, 0x03);
     return val & 0x02 ? M_DISABLE : M_ENABLE;
 }
 
 void LSM303DLHCMagnetometer::set_full_scale(FullScale fs)
 {
-    i2c_device.update_register(CRB_REG_M, fs, 0xE0);
+    _i2c_device.update_register(CRB_REG_M, fs, 0xE0);
     switch (fs) {
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_1_3_G:
-        xy_mag_sensitivity = 1.0f / 1100.0f;
-        z_mag_sensitivity = 1.0f / 980.0f;
+        _xy_mag_sensitivity = 1.0f / 1100.0f;
+        _z_mag_sensitivity = 1.0f / 980.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_1_9_G:
-        xy_mag_sensitivity = 1.0f / 885.0f;
-        z_mag_sensitivity = 1.0f / 760.0f;
+        _xy_mag_sensitivity = 1.0f / 885.0f;
+        _z_mag_sensitivity = 1.0f / 760.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_2_5_G:
-        xy_mag_sensitivity = 1.0f / 670.0f;
-        z_mag_sensitivity = 1.0f / 600.0f;
+        _xy_mag_sensitivity = 1.0f / 670.0f;
+        _z_mag_sensitivity = 1.0f / 600.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_4_0_G:
-        xy_mag_sensitivity = 1.0f / 450.0f;
-        z_mag_sensitivity = 1.0f / 400.0f;
+        _xy_mag_sensitivity = 1.0f / 450.0f;
+        _z_mag_sensitivity = 1.0f / 400.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_4_7_GA:
-        xy_mag_sensitivity = 1.0f / 400.0f;
-        z_mag_sensitivity = 1.0f / 355.0f;
+        _xy_mag_sensitivity = 1.0f / 400.0f;
+        _z_mag_sensitivity = 1.0f / 355.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_5_6_G:
-        xy_mag_sensitivity = 1.0f / 330.0f;
-        z_mag_sensitivity = 1.0f / 295.0f;
+        _xy_mag_sensitivity = 1.0f / 330.0f;
+        _z_mag_sensitivity = 1.0f / 295.0f;
         break;
     case lsm303dlhc::LSM303DLHCMagnetometer::FULL_SCALE_8_1_G:
-        xy_mag_sensitivity = 1.0f / 230.0f;
-        z_mag_sensitivity = 1.0f / 205.0f;
+        _xy_mag_sensitivity = 1.0f / 230.0f;
+        _z_mag_sensitivity = 1.0f / 205.0f;
         break;
     }
 }
 
 LSM303DLHCMagnetometer::FullScale LSM303DLHCMagnetometer::get_full_scale()
 {
-    uint8_t val = i2c_device.read_register(CRB_REG_M, 0xE0);
+    uint8_t val = _i2c_device.read_register(CRB_REG_M, 0xE0);
     FullScale fs;
     switch (val) {
     case 0x20:
@@ -240,11 +248,11 @@ LSM303DLHCMagnetometer::FullScale LSM303DLHCMagnetometer::get_full_scale()
 float LSM303DLHCMagnetometer::get_sensitivity(int axis_no)
 {
     if (axis_no == 0) {
-        return xy_mag_sensitivity;
+        return _xy_mag_sensitivity;
     } else if (axis_no == 1) {
-        return xy_mag_sensitivity;
+        return _xy_mag_sensitivity;
     } else if (axis_no == 2) {
-        return z_mag_sensitivity;
+        return _z_mag_sensitivity;
     } else {
         MBED_ERROR(MBED_ERROR_INVALID_ARGUMENT, "Invalid axis number");
     }
@@ -254,19 +262,23 @@ void LSM303DLHCMagnetometer::read_data(float data[])
 {
     int16_t data_16[3];
     read_data_16(data_16);
-    data[0] = data_16[0] * xy_mag_sensitivity;
-    data[1] = data_16[1] * xy_mag_sensitivity;
-    data[2] = data_16[2] * z_mag_sensitivity;
+    data[0] = data_16[0] * _xy_mag_sensitivity;
+    data[1] = data_16[1] * _xy_mag_sensitivity;
+    data[2] = data_16[2] * _z_mag_sensitivity;
 }
 
 void LSM303DLHCMagnetometer::read_data_16(int16_t data[])
 {
     uint8_t raw_data[6];
-    i2c_device.read_registers(OUT_X_H_M, raw_data, 6);
+    _i2c_device.read_registers(OUT_X_H_M, raw_data, 6);
+    if (_mode_state == 1) {
+        // HACK: prevent hangs in the continuous mode
+        _i2c_device.write_register(MR_REG_M, 0x00);
+    }
     data[0] = (int16_t)((raw_data[0] << 8) + raw_data[1]);
     data[1] = (int16_t)((raw_data[4] << 8) + raw_data[5]);
     data[2] = (int16_t)((raw_data[2] << 8) + raw_data[3]);
 }
 
-const float LSM303DLHCMagnetometer::temperature_sensitivity = 1.0f / 16.0f;
-const float LSM303DLHCMagnetometer::temperature_offset = 21.0f;
+const float LSM303DLHCMagnetometer::_temperature_sensitivity = 1.0f / 16.0f;
+const float LSM303DLHCMagnetometer::_temperature_offset = 21.0f;
