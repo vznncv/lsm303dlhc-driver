@@ -6,6 +6,7 @@ LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(I2C *i2c_ptr)
     : i2c_device(I2C_ADDRESS, i2c_ptr)
     , xy_mag_sensitivity(0)
     , z_mag_sensitivity(0)
+    , mode_state(0)
 {
 }
 
@@ -13,6 +14,7 @@ LSM303DLHCMagnetometer::LSM303DLHCMagnetometer(PinName sda, PinName scl, int fre
     : i2c_device(I2C_ADDRESS, sda, scl, frequency)
     , xy_mag_sensitivity(0)
     , z_mag_sensitivity(0)
+    , mode_state(0)
 {
 }
 
@@ -161,7 +163,13 @@ float LSM303DLHCMagnetometer::get_output_data_rate_hz()
 
 void LSM303DLHCMagnetometer::set_magnetometer_mode(MagnetometerMode mm)
 {
-    i2c_device.update_register(MR_REG_M, mm ? 0x00 : 0x03, 0x03);
+    if (mm) {
+        i2c_device.write_register(MR_REG_M, 0x00);
+        mode_state = 1;
+    } else {
+        mode_state = 0;
+        i2c_device.write_register(MR_REG_M, 0x03);
+    }
 }
 
 LSM303DLHCMagnetometer::MagnetometerMode LSM303DLHCMagnetometer::get_magnetometer_mode()
@@ -263,6 +271,10 @@ void LSM303DLHCMagnetometer::read_data_16(int16_t data[])
 {
     uint8_t raw_data[6];
     i2c_device.read_registers(OUT_X_H_M, raw_data, 6);
+    if (mode_state == 1) {
+        // HACK: prevent hangs in the continuous mode
+        i2c_device.write_register(MR_REG_M, 0x00);
+    }
     data[0] = (int16_t)((raw_data[0] << 8) + raw_data[1]);
     data[1] = (int16_t)((raw_data[4] << 8) + raw_data[5]);
     data[2] = (int16_t)((raw_data[2] << 8) + raw_data[3]);

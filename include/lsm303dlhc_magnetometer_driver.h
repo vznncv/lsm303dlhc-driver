@@ -266,6 +266,9 @@ private:
 
     float xy_mag_sensitivity;
     float z_mag_sensitivity;
+    // Sometime after first read in the continuous mode magnetometer hangs.
+    // To fix it, we need to enable continuous mode again.
+    int8_t mode_state;
 };
 }
 
