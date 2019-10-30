@@ -249,26 +249,26 @@ public:
     void read_data_16(int16_t data[3]);
 
 private:
-    I2CDevice i2c_device;
+    I2CDevice _i2c_device;
 
-    static const uint8_t I2C_ADDRESS = 0x3C;
+    static const uint8_t _I2C_ADDRESS = 0x3C;
 
     // TODO: check different mems to be sure that value of the "WHO_AM_I_ADDR" register is stable.
-    static const int DEVICE_ID = 0x3C;
+    static const int _DEVICE_ID = 0x3C;
 
-    static const float temperature_sensitivity;
-    static const float temperature_offset;
+    static const float _temperature_sensitivity;
+    static const float _temperature_offset;
 
     // IRx_REG_M register values
-    static const uint8_t IRA_REG_M_VAL = 0x48;
-    static const uint8_t IRB_REG_M_VAL = 0x34;
-    static const uint8_t IRC_REG_M_VAL = 0x33;
+    static const uint8_t _IRA_REG_M_VAL = 0x48;
+    static const uint8_t _IRB_REG_M_VAL = 0x34;
+    static const uint8_t _IRC_REG_M_VAL = 0x33;
 
-    float xy_mag_sensitivity;
-    float z_mag_sensitivity;
+    float _xy_mag_sensitivity;
+    float _z_mag_sensitivity;
     // Sometime after first read in the continuous mode magnetometer hangs.
     // To fix it, we need to enable continuous mode again.
-    int8_t mode_state;
+    int8_t _mode_state;
 };
 }
 
