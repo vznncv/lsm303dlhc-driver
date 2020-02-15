@@ -157,6 +157,8 @@ float LSM303DLHCMagnetometer::get_output_data_rate_hz()
     case lsm303dlhc::LSM303DLHCMagnetometer::ODR_220_HZ:
         res = 220.0f;
         break;
+    default:
+        MBED_ERROR(MBED_ERROR_UNKNOWN, "Unreachable code");
     }
     return res;
 }
