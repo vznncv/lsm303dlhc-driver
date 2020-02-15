@@ -89,7 +89,7 @@ float abs_mag_val(float m_data[3])
 void test_magnetometer()
 {
     mag->set_output_data_rate(LSM303DLHCMagnetometer::ODR_15_HZ);
-    wait_ms(100);
+    ThisThread::sleep_for(100);
 
     const int N_SAMPLES = 5;
     float samples[N_SAMPLES];
@@ -98,7 +98,7 @@ void test_magnetometer()
     for (int i = 0; i < N_SAMPLES; i++) {
         mag->read_data(m_data);
         samples[i] = abs_mag_val(m_data);
-        wait_ms(100);
+        ThisThread::sleep_for(100);
     }
 
     // check that samples are different due noise
@@ -113,6 +113,14 @@ struct interrupt_counter_t {
     float m_abs_sum;
 
     const int samples_per_invokation;
+
+    interrupt_counter_t(int samples_count, int invokation_count, float m_abs_sum, int samples_per_invokation)
+        : samples_count(samples_count)
+        , invokation_count(invokation_count)
+        , m_abs_sum(m_abs_sum)
+        , samples_per_invokation(samples_per_invokation)
+    {
+    }
 
     void process_interrupt()
     {
@@ -136,7 +144,7 @@ struct interrupt_counter_t {
 void test_magnetometer_interrupt()
 {
     InterruptIn drdy_pin(MBED_CONF_LSM303DLHC_DRIVER_TEST_DRDY);
-    interrupt_counter_t interrupt_counter = { .samples_count = 0, .invokation_count = 0, .m_abs_sum = 0, .samples_per_invokation = 1 };
+    interrupt_counter_t interrupt_counter(0, 0, 0.0f, 1);
     Callback<void()> interrupt_cb = mbed_highprio_event_queue()->event(callback(&interrupt_counter, &interrupt_counter_t::process_interrupt));
 
     // prepare accelerometer and run interrupts
@@ -144,11 +152,11 @@ void test_magnetometer_interrupt()
     drdy_pin.rise(interrupt_cb);
 
     // wait processing
-    wait_ms(500);
+    ThisThread::sleep_for(500);
 
     // disable interrupts
     drdy_pin.disable_irq();
-    wait_ms(500);
+    ThisThread::sleep_for(500);
 
     // check results
     TEST_ASSERT(interrupt_counter.samples_count > 10);

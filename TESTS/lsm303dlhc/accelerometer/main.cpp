@@ -108,7 +108,7 @@ void test_full_scale()
         int16_t expected_a_delta_int = expected_a_delta_ints[i];
 
         acc->set_full_scale(fs_mode);
-        wait_ms(200);
+        ThisThread::sleep_for(200);
 
         acc->read_data(a_vec);
         a_abs = abs_acc_val(a_vec);
@@ -166,11 +166,11 @@ void test_simple_iterrupt_usage()
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
     drdy_pin.enable_irq();
     // wait processing
-    wait_ms(1000);
+    ThisThread::sleep_for(1000);
     // disable interrupts
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_DISABLE);
     drdy_pin.disable_irq();
-    wait_ms(100);
+    ThisThread::sleep_for(100);
 
     // check results
     TEST_ASSERT_INT_WITHIN(5, 25, interrupt_counter.samples_count);
@@ -201,11 +201,11 @@ void test_fifo_interrupt_usage()
     drdy_pin.enable_irq();
 
     // wait processing
-    wait_ms(2500);
+    ThisThread::sleep_for(2500);
 
     acc->set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_DISABLE);
     drdy_pin.disable_irq();
-    wait_ms(100);
+    ThisThread::sleep_for(100);
 
     // check results
     TEST_ASSERT_EQUAL(block_size * 3, interrupt_counter.samples_count);
@@ -228,10 +228,10 @@ void test_high_pass_filter()
     acc->set_output_data_rate(LSM303DLHCAccelerometer::ODR_25HZ);
     acc->set_high_pass_filter_mode(LSM303DLHCAccelerometer::HPF_CF1);
     // skip transient state
-    wait_ms(500);
+    ThisThread::sleep_for(500);
 
     for (int i = 0; i < num_samples; i++) {
-        wait_ms(40);
+        ThisThread::sleep_for(40);
         acc->read_data(a_vec);
         a_sum += abs_acc_val(a_vec);
     }

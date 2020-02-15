@@ -187,6 +187,8 @@ float LSM303DLHCAccelerometer::get_output_data_rate_hz()
     case LSM303DLHCAccelerometer::ODR_5376HZ:
         f_odr = 5376.0f;
         break;
+    default:
+        MBED_ERROR(MBED_ERROR_UNKNOWN, "Unreachable code");
     }
     return f_odr;
 }
@@ -441,6 +443,8 @@ LSM303DLHCAccelerometer::DatadaReadyInterruptMode LSM303DLHCAccelerometer::_proc
             res = DRDY_DISABLE;
         }
         break;
+    default:
+        MBED_ERROR(MBED_ERROR_UNKNOWN, "Unreachable code");
     }
 
     return res;

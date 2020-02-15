@@ -2,19 +2,20 @@
  * Example of the LSM303DLHC usage with STM32F3Discovery board.
  *
  * Resolution and precision settings.
- *
- * Pin map:
- *
- * - PC_4 - UART TX (stdout/stderr)
- * - PC_5 - UART RX (stdin)
- * - PB_7 - I2C SDA of the LSM303DLHC
- * - PB_6 - I2C SCL of the LSM303DLHC
- * - PE_4 - INT1 pin of the LSM303DLHC
  */
 #include "lsm303dlhc_driver.h"
 #include "mbed.h"
 
-void print_axis_val(const char* axis_name, int16_t value)
+/**
+ * Pin map:
+ *
+ * - LSM303DLHC_I2C_SDA_PIN - I2C SDA of the LSM303DLHC
+ * - LSM303DLHC_I2C_SCL_PIN - I2C SCL of the LSM303DLHC
+ */
+#define LSM303DLHC_I2C_SDA_PIN PB_7
+#define LSM303DLHC_I2C_SCL_PIN PB_6
+
+void print_axis_val(const char *axis_name, int16_t value)
 {
     // convert value binary representation to show precision/resolution settings
     int sign = 1;
@@ -39,7 +40,7 @@ void print_axis_val(const char* axis_name, int16_t value)
     printf("%s: %c0b%s\n", axis_name, sign >= 0 ? '+' : '-', buff);
 }
 
-void read_and_print_accelerometer_data(LSM303DLHCAccelerometer* acc)
+void read_and_print_accelerometer_data(LSM303DLHCAccelerometer *acc)
 {
     int16_t acc_data[3];
     // read raw accelerometer data
@@ -55,7 +56,7 @@ DigitalOut led(LED2);
 int main()
 {
     // accelerometer initialization
-    I2C acc_i2c(PB_7, PB_6);
+    I2C acc_i2c(LSM303DLHC_I2C_SDA_PIN, LSM303DLHC_I2C_SCL_PIN);
     acc_i2c.frequency(400000);
     LSM303DLHCAccelerometer accelerometer(&acc_i2c);
     int err_code = accelerometer.init();
@@ -64,46 +65,46 @@ int main()
     }
 
     const int n_repeat = 5;
-    const float delay = 1.0;
+    const int delay_ms = 1000;
     while (true) {
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_2G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_ENABLED);
         printf("\nHigh resolution mode. Full scale - 2g\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_8G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_ENABLED);
         printf("\nHigh resolution mode. Full scale - 8g\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_2G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_DISABLED);
         printf("\nLow resolution mode. Full scale - 2g\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_8G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_DISABLED);
         printf("\nLow resolution mode. Full scale - 8g\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
     }
 }

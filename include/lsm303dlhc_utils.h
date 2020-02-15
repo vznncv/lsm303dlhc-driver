@@ -18,7 +18,7 @@ public:
      * @param address device address on I2C bus
      * @param i2c_ptr I2C interface
      */
-    I2CDevice(uint8_t address, I2C* i2c_ptr);
+    I2CDevice(uint8_t _address, I2C *_i2c_ptr);
 
     /**
      * Constructor.
@@ -28,7 +28,7 @@ public:
      * @param scl I2C clock line pin
      * @param frequency I2C bus frequency
      */
-    I2CDevice(uint8_t address, PinName sda, PinName scl, int frequency = 400000);
+    I2CDevice(uint8_t _address, PinName sda, PinName scl, int frequency = 400000);
 
     virtual ~I2CDevice();
 
@@ -78,7 +78,7 @@ public:
      * @param data
      * @param length
      */
-    void read_registers(uint8_t reg, uint8_t* data, uint8_t length);
+    void read_registers(uint8_t reg, uint8_t *data, uint8_t length);
 
     // the asynchronous reading isn't implemented as I2C::transfer isn't interrupt safe
     // (probably it should use CriticalSectionLock instead of PlatformMutex)
@@ -86,14 +86,14 @@ public:
     // int read_registers_async(uint8_t reg, uint8_t* data, uint8_t length, const Callback<void(uint8_t* data, uint8_t length)>& callback);
 
 private:
-    uint8_t address;
+    uint8_t _address;
     // helper variable with state flags
-    uint8_t state;
-    enum StateFlags {
+    uint8_t _state;
+    enum StateFlags : uint8_t {
         CleanupI2C = 0x01
     };
 
-    I2C* i2c_ptr;
+    I2C *_i2c_ptr;
 };
 }
 #endif // LSM303DLHC_UTILS_H

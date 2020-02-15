@@ -1,20 +1,21 @@
 /**
  * Example of the LSM303DLHC usage with STM32F3Discovery board.
  *
- * Precision settings.
- *
- * Pin map:
- *
- * - PC_4 - UART TX (stdout/stderr)
- * - PC_5 - UART RX (stdin)
- * - PB_7 - I2C SDA of the LSM303DLHC
- * - PB_6 - I2C SCL of the LSM303DLHC
- * - PE_2 - DRDY pin of the LSM303DLHC
+ * Precision settings example.
  */
 #include "lsm303dlhc_driver.h"
 #include "mbed.h"
 
-void print_axis_val(const char* axis_name, int16_t value)
+/**
+ * Pin map:
+ *
+ * - LSM303DLHC_I2C_SDA_PIN - I2C SDA of the LSM303DLHC
+ * - LSM303DLHC_I2C_SCL_PIN - I2C SCL of the LSM303DLHC
+ */
+#define LSM303DLHC_I2C_SDA_PIN PB_7
+#define LSM303DLHC_I2C_SCL_PIN PB_6
+
+void print_axis_val(const char *axis_name, int16_t value)
 {
     // convert value binary representation to show precision/resolution settings
     int sign = 1;
@@ -39,7 +40,7 @@ void print_axis_val(const char* axis_name, int16_t value)
     printf("%s: %c0b%s\n", axis_name, sign >= 0 ? '+' : '-', buff);
 }
 
-void read_and_print_magnetometer_data(LSM303DLHCMagnetometer* mag)
+void read_and_print_magnetometer_data(LSM303DLHCMagnetometer *mag)
 {
     int16_t mag_data[3];
     // read raw magnetometer data
@@ -55,7 +56,7 @@ DigitalOut led(LED2);
 int main()
 {
     // magnetometer initialization
-    I2C mag_i2c(PB_7, PB_6);
+    I2C mag_i2c(LSM303DLHC_I2C_SDA_PIN, LSM303DLHC_I2C_SCL_PIN);
     mag_i2c.frequency(400000); // LSM303DLHC can use I2C fast mode
     LSM303DLHCMagnetometer magnetometer(&mag_i2c);
     int err_code = magnetometer.init();
@@ -64,24 +65,24 @@ int main()
     }
 
     const int n_repeat = 5;
-    const float delay = 1.0;
+    const int delay_ms = 1000;
     while (true) {
         magnetometer.set_full_scale(LSM303DLHCMagnetometer::FULL_SCALE_1_3_G);
         printf("\nFull scale - 1.4 Gauss\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_magnetometer_data(&magnetometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
 
         magnetometer.set_full_scale(LSM303DLHCMagnetometer::FULL_SCALE_8_1_G);
         printf("\nFull scale - 8.1 Gauss\n");
-        wait(delay);
+        ThisThread::sleep_for(delay_ms);
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_magnetometer_data(&magnetometer);
             led = !led;
-            wait(delay);
+            ThisThread::sleep_for(delay_ms);
         };
     }
 }
