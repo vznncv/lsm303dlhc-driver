@@ -54,7 +54,8 @@ int main()
     InterruptIn drdy(LSM303DLHC_DRDY);
     EventQueue queue;
     MagDataPrinter mag_data_printer(&magnetometer);
+    Event<void()> read_and_print_event = queue.event(&mag_data_printer, &MagDataPrinter::read_and_print);
     magnetometer.set_output_data_rate(LSM303DLHCMagnetometer::ODR_3_0_HZ);
-    drdy.rise(queue.event(&mag_data_printer, &MagDataPrinter::read_and_print));
+    drdy.rise(callback(&read_and_print_event, &Event<void()>::call));
     queue.dispatch_forever();
 }

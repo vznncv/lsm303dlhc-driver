@@ -5,6 +5,7 @@
  */
 #include "lsm303dlhc_driver.h"
 #include "mbed.h"
+#include <chrono>
 
 /**
  * Pin map:
@@ -70,41 +71,41 @@ int main()
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_2G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_ENABLED);
         printf("\nHigh resolution mode. Full scale - 2g\n");
-        ThisThread::sleep_for(delay_ms);
+        ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            ThisThread::sleep_for(delay_ms);
+            ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_8G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_ENABLED);
         printf("\nHigh resolution mode. Full scale - 8g\n");
-        ThisThread::sleep_for(delay_ms);
+        ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            ThisThread::sleep_for(delay_ms);
+            ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_2G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_DISABLED);
         printf("\nLow resolution mode. Full scale - 2g\n");
-        ThisThread::sleep_for(delay_ms);
+        ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            ThisThread::sleep_for(delay_ms);
+            ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         };
 
         accelerometer.set_full_scale(LSM303DLHCAccelerometer::FULL_SCALE_8G);
         accelerometer.set_high_resolution_output_mode(LSM303DLHCAccelerometer::HRO_DISABLED);
         printf("\nLow resolution mode. Full scale - 8g\n");
-        ThisThread::sleep_for(delay_ms);
+        ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         for (int i = 0; i < n_repeat; i++) {
             read_and_print_accelerometer_data(&accelerometer);
             led = !led;
-            ThisThread::sleep_for(delay_ms);
+            ThisThread::sleep_for(chrono::milliseconds(delay_ms));
         };
     }
 }
