@@ -38,6 +38,6 @@ int main()
         printf("z: %+.4f m/s^2\n", acc_data[2]);
 
         led = !led;
-        ThisThread::sleep_for(2000);
+        ThisThread::sleep_for(2000ms);
     }
 }

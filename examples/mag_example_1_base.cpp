@@ -45,6 +45,6 @@ int main()
         printf("z:              %+.4f gauss\n", z);
         printf("absolute value: %+.4f gauss\n", abs_val);
         led = !led;
-        ThisThread::sleep_for(500);
+        ThisThread::sleep_for(500ms);
     }
 }

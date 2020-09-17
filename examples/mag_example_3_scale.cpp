@@ -5,6 +5,7 @@
  */
 #include "lsm303dlhc_driver.h"
 #include "mbed.h"
+#include <chrono>
 
 /**
  * Pin map:
@@ -65,7 +66,7 @@ int main()
     }
 
     const int n_repeat = 5;
-    const int delay_ms = 1000;
+    const chrono::milliseconds delay_ms = 1000ms;
     while (true) {
         magnetometer.set_full_scale(LSM303DLHCMagnetometer::FULL_SCALE_1_3_G);
         printf("\nFull scale - 1.4 Gauss\n");

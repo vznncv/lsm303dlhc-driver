@@ -11,7 +11,7 @@ Library allows:
 - configure high pass filter (accelerometer only)
 - read temperature value
 
-The library is tested and and compatible with Mbed OS 5.13.
+The library is tested and and compatible with Mbed OS 6.3.
 
 ## Driver usage
 
@@ -82,7 +82,7 @@ int main()
         printf("magnetometer:  x = %+.4f gauss; y = %+.4f gauss; z = %+.4f gauss; abs = %+.4f gauss\n", x_m, y_m, z_m, abs_m);
 
         led = !led;
-        wait(1.0);
+        ThisThread::sleep_for(1000ms);
     }
 }
 ```

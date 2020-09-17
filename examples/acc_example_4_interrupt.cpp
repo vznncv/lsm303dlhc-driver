@@ -58,7 +58,8 @@ int main()
     DigitalOut led(LED2);
     EventQueue queue;
     accel_interrupt_processor_t accel_interrupt_processor(0, &accelerometer, &led);
-    int2.rise(queue.event(&accel_interrupt_processor, &accel_interrupt_processor_t::read_and_print));
+    Event<void()> read_and_print_event = queue.event(&accel_interrupt_processor, &accel_interrupt_processor_t::read_and_print);
+    int2.rise(callback(&read_and_print_event, &Event<void()>::call));
     accelerometer.set_output_data_rate(LSM303DLHCAccelerometer::ODR_10HZ);
     accelerometer.set_data_ready_interrupt_mode(LSM303DLHCAccelerometer::DRDY_ENABLE);
     queue.dispatch_forever();

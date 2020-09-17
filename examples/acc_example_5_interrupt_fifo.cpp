@@ -52,7 +52,8 @@ int main()
     EventQueue queue;
     int block_size = 10;
     accel_interrupt_processor_t accel_interrupt_processor = { .count = 0, .accel_ptr = &accelerometer, .led_ptr = &led, .block_size = block_size };
-    int2.rise(queue.event(&accel_interrupt_processor, &accel_interrupt_processor_t::read_and_print));
+    Event<void()> read_and_print_event = queue.event(&accel_interrupt_processor, &accel_interrupt_processor_t::read_and_print);
+    int2.rise(callback(&read_and_print_event, &Event<void()>::call));
     accelerometer.set_output_data_rate(LSM303DLHCAccelerometer::ODR_10HZ);
     accelerometer.set_fifo_mode(LSM303DLHCAccelerometer::FIFO_ENABLE);
     accelerometer.set_fifo_watermark(block_size);

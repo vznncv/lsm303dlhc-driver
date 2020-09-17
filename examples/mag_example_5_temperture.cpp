@@ -42,6 +42,6 @@ int main()
         printf("temperature:       %+.4f C\n", temperture);
         printf("temperature (raw): 0x%04X \n", temperture_16);
         led = !led;
-        ThisThread::sleep_for(1000);
+        ThisThread::sleep_for(1000ms);
     }
 }

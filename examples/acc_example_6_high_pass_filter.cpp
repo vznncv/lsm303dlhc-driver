@@ -45,6 +45,6 @@ int main()
         printf("x: %+.4f m/s^2; y: %+.4f m/s^2; z: %+.4f m/s^2\n", acc_data[0], acc_data[1], acc_data[2]);
 
         led = !led;
-        ThisThread::sleep_for(100);
+        ThisThread::sleep_for(100ms);
     }
 }
